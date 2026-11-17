@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echo LV Function | Research Demo</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+  <!-- Header with Brand and Top Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-group">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="app-title">Echo LV Function</h1>
+          <span class="app-subtitle">Deep-learning echocardiogram research demo</span>
+        </div>
+      </div>
+      <nav class="top-nav" aria-label="Main Navigation">
+        <ul class="nav-list">
+          <li><a href="#analyze" class="nav-link" id="nav-analyze">Analyze</a></li>
+          <li><a href="#viewer" class="nav-link" id="nav-viewer">3D Stack View</a></li>
+          <li><a href="#model" class="nav-link" id="nav-model">Model & Metrics</a></li>
+          <li><a href="#about" class="nav-link" id="nav-about">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Areas (routed by hash) -->
+  <main id="main-content" class="main-container">
+    
+    <!-- 1. Analyze Section -->
+    <section id="section-analyze" class="page-section" role="region" aria-label="Analyze Video">
+      <div class="section-header">
+        <h2>Analyze Echocardiogram</h2>
+        <p class="section-intro">
+          Upload an apical 4-chamber (A4C) echocardiogram video. The 3D deep-learning model inspects 16 sampled frames across ~1.3 seconds to estimate the probability of reduced left ventricular function (EF &lt; 50%).
+        </p>
+      </div>
+
+      <div class="analyze-grid">
+        <!-- Input & Upload Card -->
+        <div class="card upload-card">
+          <h3 class="card-title">1. Select Echo Video</h3>
+          <p class="card-desc">Supported formats: <code>.avi</code>, <code>.mp4</code>, <code>.mov</code> (maximum 100 MB).</p>
+          
+          <div id="drop-zone" class="drop-zone" tabindex="0" role="button" aria-label="Drag and drop echocardiogram video here or click to browse">
+            <input type="file" id="file-input" accept=".avi,.mp4,.mov" class="file-input-hidden" aria-label="Choose echocardiogram video file">
+            <div class="drop-zone-content">
+              <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <p class="drop-text">Drag and drop echo video here, or <span class="browse-link">browse file</span></p>
+              <p class="drop-subtext">Single-view A4C video (EchoNet-Dynamic format)</p>
+            </div>
+          </div>
+
+          <div id="file-details" class="file-details hidden">
+            <div class="file-info-row">
+              <span class="file-name-label">Selected file:</span>
+              <span id="selected-file-name" class="file-name-val"></span>
+              <span id="selected-file-size" class="file-size-val"></span>
+            </div>
+            <button id="clear-file-btn" class="btn btn-secondary btn-sm" type="button">Remove file</button>
+          </div>
+
+          <!-- Video Preview Player -->
+          <div id="preview-wrapper" class="preview-wrapper hidden">
+            <h4 class="preview-title">Video Preview</h4>
+            <div class="video-container">
+              <video id="video-preview" controls playsinline muted></video>
+            </div>
+          </div>
+
+          <!-- Action Button & Status -->
+          <div class="action-bar">
+            <button id="analyze-btn" class="btn btn-primary" type="button" disabled>
+              <span class="btn-text">Analyze Video</span>
+              <span class="spinner hidden" id="analyze-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div id="status-message" class="status-box hidden" role="status" aria-live="polite"></div>
+          <div id="error-message" class="error-box hidden" role="alert" aria-live="assertive"></div>
+        </div>
+
+        <!-- Prediction Result Card -->
+        <div id="result-card" class="card result-card hidden" aria-live="polite">
+          <div class="result-header">
+            <h3 class="card-title">2. Model Estimation</h3>
+            <span id="result-badge" class="result-badge">--</span>
+          </div>
+
+          <div class="result-body">
+            <!-- Probability Gauge -->
+            <div class="gauge-section">
+              <div class="gauge-header">
+                <span class="gauge-label">Probability of Reduced LV Function:</span>
+                <span id="gauge-value" class="gauge-value">--%</span>
+              </div>
+              <div class="gauge-track-container" id="gauge-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="gauge-track">
+                  <div id="gauge-fill" class="gauge-fill" style="width: 0%;"></div>
+                  <!-- Threshold marker -->
+                  <div id="gauge-threshold-marker" class="gauge-threshold-marker" title="Decision Threshold">
+                    <div class="threshold-line"></div>
+                    <span class="threshold-tag" id="threshold-tag-text">Thr: 9.7%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="gauge-scale">
+                <span>0% (Normal)</span>
+                <span id="threshold-display-value">Threshold: 9.7%</span>
+                <span>100% (Abnormal)</span>
+              </div>
+            </div>
+
+            <!-- Plain-language explanation -->
+            <div class="explanation-box">
+              <p class="explanation-text">
+                <strong>Plain-language explanation:</strong> The threshold is deliberately low so that the model rarely misses a possible case, which also means about half of its flags are false alarms.
+              </p>
+            </div>
+
+            <!-- Filmstrip of 16 returned frames -->
+            <div class="filmstrip-section">
+              <div class="filmstrip-header">
+                <h4>Sampled Model Inputs (16 frames, 112×112)</h4>
+                <a href="#viewer" class="btn btn-outline btn-sm view-3d-link">Inspect in 3D Stack View &rarr;</a>
+              </div>
+              <p class="filmstrip-caption">
+                The model sampled 16 frames spaced every 4th frame (period = 4, ~1.3 s cardiac cycle duration).
+              </p>
+              <div id="filmstrip-container" class="filmstrip-grid" tabindex="0" aria-label="16 sampled video frames">
+                <!-- Frame thumbnails injected by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 3D Stack View Section -->
+    <section id="section-viewer" class="page-section hidden" role="region" aria-label="3D Stack Viewer">
+      <div class="section-header">
+        <h2>Space-Time Frame Stack (3D View)</h2>
+        <p class="section-caption-mandatory">
+          Space-time visualization of the sampled frames. This is not a 3D anatomical reconstruction.
+        </p>
+      </div>
+
+      <!-- No result placeholder -->
+      <div id="viewer-placeholder" class="card placeholder-card">
+        <div class="placeholder-content">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+          <h3>Analyze a video first</h3>
+          <p>Please upload and analyze an echocardiogram video on the Analyze page to view its 16-frame space-time stack.</p>
+          <a href="#analyze" class="btn btn-primary">Go to Analyze &rarr;</a>
+        </div>
+      </div>
+
+      <!-- 3D Canvas and Controls -->
+      <div id="viewer-container" class="viewer-layout hidden">
+        <div class="viewer-toolbar card">
+          <div class="toolbar-group">
+            <button id="viewer-play-btn" class="btn btn-secondary btn-sm" type="button" aria-label="Play or pause frame animation">
+              <span id="play-btn-icon" aria-hidden="true">&#9658;</span>
+              <span id="play-btn-text">Play</span>
+            </button>
+            <button id="viewer-reset-btn" class="btn btn-secondary btn-sm" type="button">Reset view</button>
+            <button id="viewer-export-btn" class="btn btn-primary btn-sm" type="button">
+              <span id="export-btn-text">Export video</span>
+              <span id="export-spinner" class="spinner hidden" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="toolbar-slider-group">
+            <label for="frame-slider" class="slider-label">
+              Highlight Frame: <strong id="current-frame-label">Frame 1 / 16</strong>
+            </label>
+            <input type="range" id="frame-slider" min="0" max="15" value="0" step="1" class="frame-slider">
+          </div>
+
+          <div class="toolbar-hint">
+            <small>Drag: Rotate &bull; Wheel: Zoom &bull; Right-Click: Pan</small>
+          </div>
+        </div>
+
+        <div id="export-status" class="status-box export-status hidden" role="status" aria-live="polite"></div>
+
+        <div class="canvas-wrapper card">
+          <div id="webgl-canvas-container" class="webgl-container"></div>
+          <div id="webgl-error-msg" class="webgl-error hidden">
+            <p>WebGL or Three.js is not supported in this browser.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Model & Metrics Section -->
+    <section id="section-model" class="page-section hidden" role="region" aria-label="Model Evaluation and Metrics">
+      <div class="section-header">
+        <h2>Model Evaluation &amp; Metrics</h2>
+        <p class="section-intro">
+          Performance metrics evaluated on 500 test echocardiogram videos (115 abnormal, 23% prevalence) from the EchoNet-Dynamic dataset.
+        </p>
+      </div>
+
+      <!-- Metric Cards Grid -->
+      <div class="metrics-grid">
+        <div class="card metric-card">
+          <div class="metric-title">Test AUC</div>
+          <div class="metric-val" id="metric-test-auc">--</div>
+          <div class="metric-sub" id="metric-test-auc-ci">90% CI: [--, --]</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Best Val AUC</div>
+          <div class="metric-val" id="metric-best-val-auc">--</div>
+          <div class="metric-sub">Highest validation score</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Decision Threshold</div>
+          <div class="metric-val" id="metric-threshold">--</div>
+          <div class="metric-sub">Chosen on validation set</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Best Epoch</div>
+          <div class="metric-val" id="metric-best-epoch">--</div>
+          <div class="metric-sub">Saved checkpoint</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Sensitivity (Recall)</div>
+          <div class="metric-val" id="metric-sens">--</div>
+          <div class="metric-sub">True positive rate</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Specificity</div>
+          <div class="metric-val" id="metric-spec">--</div>
+          <div class="metric-sub">True negative rate</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Positive Predictive Val</div>
+          <div class="metric-val" id="metric-ppv">--</div>
+          <div class="metric-sub">Precision (PPV)</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">Negative Predictive Val</div>
+          <div class="metric-val" id="metric-npv">--</div>
+          <div class="metric-sub">Reliability of normal (NPV)</div>
+        </div>
+        <div class="card metric-card">
+          <div class="metric-title">F1 Score</div>
+          <div class="metric-val" id="metric-f1">--</div>
+          <div class="metric-sub">Harmonic mean of sens &amp; ppv</div>
+        </div>
+      </div>
+
+      <!-- Training History Charts -->
+      <div class="charts-section">
+        <div class="card chart-card">
+          <h3 class="card-title">Training &amp; Validation Loss (50 Epochs)</h3>
+          <p class="chart-caption">Cross-entropy loss per epoch across training and validation splits.</p>
+          <div id="loss-chart-container" class="svg-chart-container" role="img" aria-label="Line chart showing training and validation loss over 50 epochs">
+            <!-- Inline SVG chart rendered by JS -->
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <h3 class="card-title">Training &amp; Validation AUC (50 Epochs)</h3>
+          <p class="chart-caption">Area Under ROC Curve per epoch across training and validation splits.</p>
+          <div id="auc-chart-container" class="svg-chart-container" role="img" aria-label="Line chart showing training and validation AUC over 50 epochs">
+            <!-- Inline SVG chart rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Note on Overfitting -->
+      <div class="card note-card">
+        <h3 class="note-title">Plain-Language Note on Overfitting</h3>
+        <p>
+          Overfitting is clearly visible in the training curves: by epoch 50, training AUC reaches approximately <strong>0.996</strong> while validation AUC plateaus around <strong>0.910</strong>. Concurrently, validation loss begins rising after mid-training. To prevent degraded generalization, model selection selected the best validation checkpoint at <strong>Epoch 26</strong> (0-indexed epoch 25, val AUC 0.921) rather than the final epoch.
+        </p>
+      </div>
+
+      <!-- Curves Image Endpoint -->
+      <div id="curves-image-wrapper" class="card curves-image-card">
+        <h3 class="card-title">Saved Training Curves</h3>
+        <p class="chart-caption">Generated during the 50-epoch Kaggle training run.</p>
+        <div class="curves-img-box">
+          <img id="curves-img" src="/api/curves" alt="Training curves for 50 epochs showing loss and AUC" class="curves-image">
+        </div>
+      </div>
+
+      <!-- "What the numbers mean" Table -->
+      <div class="card table-card">
+        <h3 class="card-title">What the Numbers Mean</h3>
+        <div class="table-responsive">
+          <table class="metrics-table">
+            <thead>
+              <tr>
+                <th scope="col">Metric</th>
+                <th scope="col">Value</th>
+                <th scope="col">Plain-Language Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Sensitivity</th>
+                <td id="tbl-sens">83.5%</td>
+                <td>Out of 100 hearts with truly reduced LV function, the model correctly flags approximately 84.</td>
+              </tr>
+              <tr>
+                <th scope="row">Specificity</th>
+                <td id="tbl-spec">71.7%</td>
+                <td>Out of 100 hearts with normal pumping function, the model correctly identifies approximately 72 as normal.</td>
+              </tr>
+              <tr>
+                <th scope="row">Positive Predictive Value (PPV)</th>
+                <td id="tbl-ppv">46.8%</td>
+                <td>When the model flags an echo video as abnormal, there is about a 47% chance the heart actually has reduced LV function (about half are false alarms).</td>
+              </tr>
+              <tr>
+                <th scope="row">Negative Predictive Value (NPV)</th>
+                <td id="tbl-npv">93.6%</td>
+                <td>When the model indicates normal LV function, there is about a 94% chance the heart truly has normal pumping function.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. About Section -->
+    <section id="section-about" class="page-section hidden" role="region" aria-label="About the Project">
+      <div class="section-header">
+        <h2>About the Project</h2>
+        <p class="section-intro">Student research demo exploring deep learning for echocardiography.</p>
+      </div>
+
+      <div class="about-grid">
+        <div class="card about-card">
+          <h3 class="card-title">Dataset</h3>
+          <p>
+            The model was trained and evaluated on the <strong>EchoNet-Dynamic</strong> dataset from Stanford University, comprising 10,030 apical 4-chamber (A4C) echocardiogram videos (112×112 resolution) paired with expert cardiac measurements.
+          </p>
+          <p>
+            The training target is binary: <strong>Ejection Fraction (EF) &lt; 50%</strong> defines abnormal (reduced) left ventricular function (labeled 1), while EF &ge; 50% is normal (labeled 0). The dataset is split into 7,465 training, 1,288 validation, and 1,277 test videos (~22% overall abnormal prevalence).
+          </p>
+        </div>
+
+        <div class="card about-card">
+          <h3 class="card-title">How the Model Works</h3>
+          <p>
+            The model architecture is a 3D convolutional video network based on <strong>X3D-M</strong> with a cross-view fusion head (from the <em>OmniRead-Echo</em> framework). In this configuration, it operates as a single-view model on the Apical 4-Chamber view.
+          </p>
+          <p>
+            During inference, the model samples <strong>16 frames</strong> from the video (every 4th frame, spanning ~64 frames or ~1.3 seconds at 50 fps, capturing approximately one full cardiac cycle). Each frame is resized to 112×112. The model outputs a single probability estimating the likelihood of reduced LV function.
+          </p>
+        </div>
+
+        <div class="card about-card">
+          <h3 class="card-title">Evaluation &amp; Scope</h3>
+          <p>
+            The model was evaluated on a held-out test subset of <strong>500 videos</strong> (115 abnormal, 23% abnormal rate), achieving a Test AUC of <strong>0.867</strong> (90% confidence interval: 0.836 to 0.896) and a Best Validation AUC of <strong>0.921</strong>.
+          </p>
+          <p>
+            The decision threshold (0.0974) was selected on the validation set to balance sensitivity (83.5%) and specificity (71.7%), producing a Negative Predictive Value of 93.6% and Positive Predictive Value of 46.8%.
+          </p>
+        </div>
+
+        <div class="card about-card">
+          <h3 class="card-title">Limitations &amp; Constraints</h3>
+          <ul class="about-list">
+            <li><strong>Single-view limitation:</strong> Clinical echocardiography examines multiple views (A4C, A2C, PLAX, PSAX) for comprehensive assessment. This demo uses only A4C.</li>
+            <li><strong>Single-hospital cohort:</strong> Trained on scans acquired from a single healthcare system; accuracy may vary on other ultrasound machines, transducers, or patient cohorts.</li>
+            <li><strong>Uncalibrated probabilities:</strong> Model output reflects raw sigmoid activation; numbers represent relative ranking rather than calibrated epidemiological risks.</li>
+          </ul>
+        </div>
+
+        <div class="card about-card full-width">
+          <h3 class="card-title">Academic Citation</h3>
+          <p class="citation-text">
+            Based on the architecture and methodology from:<br>
+            <em>"Multiview deep learning improves echocardiogram interpretation"</em>, <em>Nature Cardiovascular Research</em>, 2026.<br>
+            Reference code: <code>github.com/JoshBarrios/omniread-echo</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Persistent Global Footer Required on Every Page -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p class="footer-disclaimer">Research demo only. Not for clinical use or diagnosis.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

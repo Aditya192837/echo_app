@@ -1,0 +1,13 @@
+# Python virtual environment
+.venv/
+
+# Large model checkpoint (too big for GitHub - download separately from Kaggle)
+model/best.pt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Temp files
+*.tmp
