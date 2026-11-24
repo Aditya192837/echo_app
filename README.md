@@ -6,9 +6,9 @@ An interactive research platform and clinical decision-support demonstration for
 
 ---
 
-## 🌟 Extended Parameters & Reviewer-Requested Features
+## Parameters and Features
 
-To expand beyond basic binary classification and demonstrate substantive scientific and clinical depth, this platform incorporates the following key parameters and analytical modules:
+
 
 ### 1. Interactive Clinical Operating Point & Cutoff Simulator
 - **Dynamic Decision Threshold Slider (0.01 – 0.50)**: Move beyond a single static operating point. Clinicians and researchers can simulate custom risk cutoffs in real time.
