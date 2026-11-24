@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Echo LV Function | Research Demo</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=2.2">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -96,7 +99,13 @@
         <!-- Prediction Result Card -->
         <div id="result-card" class="card result-card hidden" aria-live="polite">
           <div class="result-header">
-            <h3 class="card-title">2. Model Estimation</h3>
+            <div>
+              <h3 class="card-title">2. Model Estimation</h3>
+              <div class="triage-status-wrapper">
+                <span class="triage-label">Clinical Triage:</span>
+                <span id="triage-badge" class="triage-badge triage-low">Low Risk</span>
+              </div>
+            </div>
             <span id="result-badge" class="result-badge">--</span>
           </div>
 
@@ -131,19 +140,166 @@
               </p>
             </div>
 
+            <!-- Interactive Operating Point / Threshold Controller (Reviewer-Requested Feature) -->
+            <div class="card subcard operating-point-card">
+              <div class="subcard-header">
+                <h4>Interactive Clinical Operating Point &amp; Cutoff Simulator</h4>
+                <span class="subcard-tag">Reviewer Feature</span>
+              </div>
+              <p class="subcard-desc">
+                Adjust the clinical decision threshold to simulate different deployment scenarios (screening vs. confirmatory diagnosis), as investigated in Extended Data Table 4 of Barrios et al. (Nature Cardiovasc Res 2026).
+              </p>
+              
+              <div class="preset-btn-group" role="group" aria-label="Operating threshold presets">
+                <button type="button" class="btn btn-sm btn-outline preset-btn active" data-preset="f1" id="preset-f1-btn">
+                  Default: F1-Optimal (0.0974)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline preset-btn" data-preset="high_sens" id="preset-sens-btn">
+                  High Sensitivity (0.0450)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline preset-btn" data-preset="high_spec" id="preset-spec-btn">
+                  High Specificity (0.1800)
+                </button>
+              </div>
+
+              <div class="threshold-slider-wrapper">
+                <div class="threshold-slider-header">
+                  <label for="operating-threshold-slider">Custom Operating Cutoff:</label>
+                  <strong id="operating-threshold-val">0.0974 (9.7%)</strong>
+                </div>
+                <input type="range" id="operating-threshold-slider" min="0.010" max="0.500" step="0.005" value="0.0974" class="threshold-range-slider">
+                <div class="threshold-slider-hints">
+                  <span>0.010 (Ultra-Sensitive)</span>
+                  <span>0.250 (Balanced)</span>
+                  <span>0.500 (Strictly Specific)</span>
+                </div>
+              </div>
+
+              <!-- Real-time Operating Tradeoff Metrics Grid -->
+              <div class="operating-metrics-display">
+                <div class="op-stat-card">
+                  <span class="op-stat-lbl">Simulated Sensitivity</span>
+                  <span class="op-stat-val text-accent" id="sim-sensitivity">83.5%</span>
+                  <span class="op-stat-hint">True Positive Rate (Recall)</span>
+                </div>
+                <div class="op-stat-card">
+                  <span class="op-stat-lbl">Simulated Specificity</span>
+                  <span class="op-stat-val text-accent" id="sim-specificity">71.7%</span>
+                  <span class="op-stat-hint">True Negative Rate</span>
+                </div>
+                <div class="op-stat-card">
+                  <span class="op-stat-lbl">Positive Predictive (PPV)</span>
+                  <span class="op-stat-val text-success" id="sim-ppv">46.8%</span>
+                  <span class="op-stat-hint">Precision at 23% prev</span>
+                </div>
+                <div class="op-stat-card">
+                  <span class="op-stat-lbl">Negative Predictive (NPV)</span>
+                  <span class="op-stat-val text-success" id="sim-npv">93.6%</span>
+                  <span class="op-stat-hint">Reliability of normal</span>
+                </div>
+              </div>
+
+              <div class="operating-summary-bar">
+                <div class="summary-metric">
+                  <span class="summary-lbl">Decision at Cutoff:</span>
+                  <span id="cutoff-classification" class="summary-val text-normal">Normal LV Function</span>
+                </div>
+                <div class="summary-metric">
+                  <span class="summary-lbl">Confidence Margin:</span>
+                  <span id="cutoff-margin" class="summary-val">--</span>
+                </div>
+                <div class="summary-metric">
+                  <span class="summary-lbl">Operating Target:</span>
+                  <span id="cutoff-target-mode" class="summary-val">Balanced F1 (Validation)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Spatiotemporal Video Kinematics & Contraction Excursion -->
+            <div class="card subcard kinematics-card">
+              <div class="subcard-header">
+                <h4>Spatiotemporal Video Kinematics &amp; Ventricular Excursion</h4>
+                <span class="subcard-tag">Kinematics</span>
+              </div>
+              <p class="subcard-desc">
+                Derived biomechanical parameters across the 16 sampled frames spanning ~64 video frames of the cardiac cycle.
+              </p>
+              
+              <div class="kinematics-metrics-grid">
+                <div class="kinematics-item">
+                  <span class="k-label">Cardiac Cycle Duration</span>
+                  <span class="k-value" id="k-cycle-duration">~1,280 ms</span>
+                  <span class="k-sub">64 frames @ 50 fps</span>
+                </div>
+                <div class="kinematics-item">
+                  <span class="k-label">Est. Heart Rate</span>
+                  <span class="k-value" id="k-heart-rate">~47–55 bpm</span>
+                  <span class="k-sub">Cardiac cycle proxy</span>
+                </div>
+                <div class="kinematics-item">
+                  <span class="k-label">Spatiotemporal Volume</span>
+                  <span class="k-value">16 × 112 × 112</span>
+                  <span class="k-sub">Period = 4 frames</span>
+                </div>
+                <div class="kinematics-item">
+                  <span class="k-label">Contraction Dynamic Peak</span>
+                  <span class="k-value" id="k-peak-frame">Frame #8</span>
+                  <span class="k-sub" id="k-peak-phase">End-Systole Candidate</span>
+                </div>
+              </div>
+
+              <!-- Motion velocity sparkline -->
+              <div class="motion-sparkline-box">
+                <div class="sparkline-title-row">
+                  <span class="sparkline-title">Inter-Frame Ventricular Motion Velocity Across Cardiac Cycle:</span>
+                  <span class="sparkline-legend"><span class="legend-dot es"></span> End-Systole Peak &bull; <span class="legend-dot ed"></span> End-Diastole Relaxation</span>
+                </div>
+                <div id="motion-sparkline-container" class="motion-sparkline-container">
+                  <!-- SVG sparkline generated by JS -->
+                </div>
+              </div>
+            </div>
+
             <!-- Filmstrip of 16 returned frames -->
             <div class="filmstrip-section">
               <div class="filmstrip-header">
-                <h4>Sampled Model Inputs (16 frames, 112×112)</h4>
-                <a href="#viewer" class="btn btn-outline btn-sm view-3d-link">Inspect in 3D Stack View &rarr;</a>
+                <div>
+                  <h4>Sampled Model Inputs (16 frames, 112×112)</h4>
+                  <p class="filmstrip-caption">
+                    Sampled every 4th frame (period = 4). Toggle AI attention overlay to visualize myocardial kinetic focus.
+                  </p>
+                </div>
+                <div class="filmstrip-actions">
+                  <button type="button" id="toggle-gradcam-btn" class="btn btn-outline btn-sm">
+                    <span id="gradcam-btn-icon">&#9673;</span> AI Attention (Grad-CAM)
+                  </button>
+                  <a href="#viewer" class="btn btn-outline btn-sm view-3d-link">Inspect in 3D Stack View &rarr;</a>
+                </div>
               </div>
-              <p class="filmstrip-caption">
-                The model sampled 16 frames spaced every 4th frame (period = 4, ~1.3 s cardiac cycle duration).
-              </p>
+
+              <div id="gradcam-controls" class="gradcam-controls hidden">
+                <label for="gradcam-opacity-slider">Heatmap Intensity: <span id="gradcam-opacity-val">65%</span></label>
+                <input type="range" id="gradcam-opacity-slider" min="10" max="95" value="65" step="5" class="gradcam-slider">
+                <span class="gradcam-hint">Simulating guided Grad-CAM myocardial and apical attention (Barrios et al., Fig. 4)</span>
+              </div>
+
               <div id="filmstrip-container" class="filmstrip-grid" tabindex="0" aria-label="16 sampled video frames">
                 <!-- Frame thumbnails injected by JS -->
               </div>
             </div>
+
+            <!-- Report Export Button -->
+            <div class="report-export-bar">
+              <button type="button" id="print-report-btn" class="btn btn-secondary btn-sm">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Export / Print Clinical Case Summary
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
@@ -181,6 +337,9 @@
               <span id="play-btn-text">Play</span>
             </button>
             <button id="viewer-reset-btn" class="btn btn-secondary btn-sm" type="button">Reset view</button>
+            <button id="viewer-gradcam-btn" class="btn btn-secondary btn-sm" type="button">
+              <span id="viewer-gradcam-icon">&#9673;</span> AI Heatmap
+            </button>
             <button id="viewer-export-btn" class="btn btn-primary btn-sm" type="button">
               <span id="export-btn-text">Export video</span>
               <span id="export-spinner" class="spinner hidden" aria-hidden="true"></span>
@@ -215,11 +374,11 @@
       <div class="section-header">
         <h2>Model Evaluation &amp; Metrics</h2>
         <p class="section-intro">
-          Performance metrics evaluated on 500 test echocardiogram videos (115 abnormal, 23% prevalence) from the EchoNet-Dynamic dataset.
+          Performance metrics evaluated on 500 test echocardiogram videos (115 abnormal, 23% prevalence) from the EchoNet-Dynamic dataset, complemented with comprehensive multi-view benchmarks from Barrios et al. (Nature Cardiovascular Research 2026).
         </p>
       </div>
 
-      <!-- Metric Cards Grid -->
+      <!-- Metric Cards Grid (Original Essential Metrics) -->
       <div class="metrics-grid">
         <div class="card metric-card">
           <div class="metric-title">Test AUC</div>
@@ -341,6 +500,122 @@
           </table>
         </div>
       </div>
+
+      <!-- NEW: Multiview vs Single-View Comparative Benchmark Hub (Barrios et al., 2026) -->
+      <div class="card benchmark-card" id="multiview-benchmark-section">
+        <div class="benchmark-header">
+          <div>
+            <h3 class="card-title">Multiview vs. Single-View Architecture Benchmark Hub</h3>
+            <p class="chart-caption">
+              Comparative discrimination data from <em>Nature Cardiovascular Research</em> (2026), proving that mid-fusion cross-view integration improves AUC by +0.06 to +0.09 over single-view models.
+            </p>
+          </div>
+          <span class="badge-accent">Barrios et al. 2026</span>
+        </div>
+
+        <!-- Task Selector Tabs -->
+        <div class="task-tabs-container" id="task-tabs-container">
+          <button type="button" class="tab-btn active" data-task="lvrv">LV/RV Abnormality</button>
+          <button type="button" class="tab-btn" data-task="diastolic">Diastolic Dysfunction</button>
+          <button type="button" class="tab-btn" data-task="valve">Valve Regurgitation</button>
+          <button type="button" class="tab-btn" data-task="lvef">LVEF &lt; 50%</button>
+          <button type="button" class="tab-btn" data-task="lv_size">LV Dilation</button>
+          <button type="button" class="tab-btn" data-task="rv_func">RV Function</button>
+          <button type="button" class="tab-btn" data-task="mitral_regurg">Mitral Regurg</button>
+        </div>
+
+        <div class="benchmark-content-grid">
+          <!-- Dynamic Bar Chart -->
+          <div class="benchmark-chart-box">
+            <h4 id="benchmark-chart-title">AUC Comparison: LV/RV Abnormality</h4>
+            <div id="benchmark-bar-chart" class="benchmark-bar-chart">
+              <!-- SVG bar chart injected by JS -->
+            </div>
+            <div class="benchmark-gain-callout" id="benchmark-gain-callout">
+              <strong>Architecture Advantage:</strong> Multiview mid-fusion outperforms single-view A4c by +0.056 AUC (P &lt; 0.001).
+            </div>
+          </div>
+
+          <!-- Dynamic Comparison Table -->
+          <div class="benchmark-table-box">
+            <h4 id="benchmark-table-title">Full Diagnostic Metrics: LV/RV Abnormality</h4>
+            <div class="table-responsive">
+              <table class="metrics-table benchmark-table">
+                <thead>
+                  <tr>
+                    <th>Architecture</th>
+                    <th>AUC (95% CI)</th>
+                    <th>Sens</th>
+                    <th>Spec</th>
+                    <th>PPV</th>
+                    <th>NPV</th>
+                    <th>F1</th>
+                  </tr>
+                </thead>
+                <tbody id="benchmark-table-body">
+                  <!-- Rows injected by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW: Multi-Center External Validation Panel (UCSF vs MHI) -->
+      <div class="card multicenter-card">
+        <h3 class="card-title">Multi-Center External Validation Generalizability</h3>
+        <p class="chart-caption">
+          Evaluation of algorithm generalization across healthcare institutions: internal cohort from University of California, San Francisco (UCSF) vs. external cohort from Montreal Heart Institute (MHI, Canada).
+        </p>
+        
+        <div class="multicenter-grid" id="multicenter-grid">
+          <!-- Validation cards injected by JS -->
+        </div>
+      </div>
+
+      <!-- NEW: Subgroup Fairness & Scanner Invariance -->
+      <div class="card fairness-card">
+        <h3 class="card-title">Subgroup Robustness &amp; Scanner Invariance</h3>
+        <p class="chart-caption">
+          Demonstrating consistent diagnostic discrimination across patient demographics and ultrasound equipment manufacturers (Extended Data Tables 5 &amp; 8).
+        </p>
+
+        <div class="fairness-tables-grid">
+          <div class="fairness-subbox">
+            <h4>Demographic Parity (UCSF Cohort)</h4>
+            <div class="table-responsive">
+              <table class="metrics-table compact-table">
+                <thead>
+                  <tr><th>Stratum</th><th>N</th><th>AUC (95% CI)</th><th>Sens</th><th>Spec</th><th>F1</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>Males</strong></td><td>3,002</td><td>0.904 (0.894–0.914)</td><td>82.6%</td><td>81.0%</td><td>0.725</td></tr>
+                  <tr><td><strong>Females</strong></td><td>3,241</td><td>0.907 (0.894–0.918)</td><td>79.0%</td><td>86.4%</td><td>0.655</td></tr>
+                  <tr><td><strong>Age 18–60</strong></td><td>2,550</td><td>0.912 (0.900–0.922)</td><td>83.4%</td><td>84.0%</td><td>0.723</td></tr>
+                  <tr><td><strong>Age 61+</strong></td><td>3,695</td><td>0.905 (0.895–0.915)</td><td>79.5%</td><td>84.0%</td><td>0.676</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="fairness-subbox">
+            <h4>Ultrasound Hardware Invariance</h4>
+            <div class="table-responsive">
+              <table class="metrics-table compact-table">
+                <thead>
+                  <tr><th>Manufacturer</th><th>N</th><th>AUC (95% CI)</th><th>Sens</th><th>Spec</th><th>F1</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>Philips Healthcare</strong></td><td>4,720</td><td>0.906 (0.898–0.915)</td><td>80.1%</td><td>85.3%</td><td>0.706</td></tr>
+                  <tr><td><strong>GE Healthcare</strong></td><td>1,022</td><td>0.913 (0.896–0.931)</td><td>81.0%</td><td>84.5%</td><td>0.688</td></tr>
+                  <tr><td><strong>Siemens Acuson</strong></td><td>508</td><td>0.913 (0.888–0.938)</td><td>74.3%</td><td>90.1%</td><td>0.700</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </section>
 
     <!-- 4. About Section -->
@@ -391,11 +666,13 @@
         </div>
 
         <div class="card about-card full-width">
-          <h3 class="card-title">Academic Citation</h3>
+          <h3 class="card-title">Academic Citation &amp; Paper Context</h3>
           <p class="citation-text">
             Based on the architecture and methodology from:<br>
-            <em>"Multiview deep learning improves echocardiogram interpretation"</em>, <em>Nature Cardiovascular Research</em>, 2026.<br>
-            Reference code: <code>github.com/JoshBarrios/omniread-echo</code>.
+            Joshua P. Barrios, Minhaj U. Ansari, Jeffrey E. Olgin, Sean Abreau, Jacques Delfrate, Elodie L. Langlais, Robert Avram &amp; Geoffrey H. Tison.<br>
+            <strong>"Multiview deep learning improves detection of major cardiac conditions from echocardiography"</strong>.<br>
+            <em>Nature Cardiovascular Research</em>, Volume 5, March 2026, pages 234–245.<br>
+            DOI: <a href="https://doi.org/10.1038/s44161-026-00786-7" target="_blank" rel="noopener noreferrer">10.1038/s44161-026-00786-7</a> &bull; Reference Code: <code>github.com/JoshBarrios/omniread-echo</code>.
           </p>
         </div>
       </div>
@@ -410,6 +687,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=2.2"></script>
 </body>
 </html>

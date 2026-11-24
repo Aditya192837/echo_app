@@ -3,20 +3,23 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { state } from './main.js';
+import { state } from './main.js?v=2.2';
 
 let scene, camera, renderer, controls;
 let planes = [];
 let planeBorders = [];
+let gradcamPlanes = [];
 let animId = null;
 let isPlaying = false;
 let playInterval = null;
 let currentFrame = 0;
 let isAutoRotatingForExport = false;
+let isGradCamActive = false;
 
 // DOM elements
 let placeholderEl, containerEl, canvasContainer, errorMsgEl;
 let sliderEl, frameLabelEl, playBtn, resetBtn, exportBtn, exportSpinner, exportStatusEl;
+let gradcamBtn;
 
 export function initViewer() {
   placeholderEl = document.getElementById('viewer-placeholder');
@@ -30,6 +33,7 @@ export function initViewer() {
   exportBtn = document.getElementById('viewer-export-btn');
   exportSpinner = document.getElementById('export-spinner');
   exportStatusEl = document.getElementById('export-status');
+  gradcamBtn = document.getElementById('viewer-gradcam-btn');
 
   // Slider change
   sliderEl.addEventListener('input', (e) => {
@@ -45,6 +49,28 @@ export function initViewer() {
   resetBtn.addEventListener('click', () => {
     resetCamera();
   });
+
+  // 3D Grad-CAM Activation toggle
+  if (gradcamBtn) {
+    gradcamBtn.addEventListener('click', () => {
+      isGradCamActive = !isGradCamActive;
+      if (isGradCamActive) {
+        gradcamBtn.classList.add('active');
+        gradcamBtn.style.backgroundColor = 'var(--accent-primary, #0284c7)';
+        gradcamBtn.style.color = '#ffffff';
+      } else {
+        gradcamBtn.classList.remove('active');
+        gradcamBtn.style.backgroundColor = '';
+        gradcamBtn.style.color = '';
+      }
+      gradcamPlanes.forEach((gp, i) => {
+        gp.visible = isGradCamActive;
+        if (isGradCamActive) {
+          gp.material.opacity = i === currentFrame ? 0.9 : 0.25;
+        }
+      });
+    });
+  }
 
   // Export video
   exportBtn.addEventListener('click', () => {
@@ -136,8 +162,10 @@ function buildStack(frames) {
   // Clear any existing mesh objects
   planes.forEach((p) => scene.remove(p));
   planeBorders.forEach((b) => scene.remove(b));
+  gradcamPlanes.forEach((g) => scene.remove(g));
   planes = [];
   planeBorders = [];
+  gradcamPlanes = [];
 
   const planeSize = 112; // 112x112 matches video frame resolution
   const spacing = 16;   // spacing along Z in time order
@@ -145,6 +173,7 @@ function buildStack(frames) {
   const halfDepth = ((count - 1) * spacing) / 2;
 
   const textureLoader = new THREE.TextureLoader();
+  const heatmapTexture = createHeatmapCanvasTexture();
 
   frames.forEach((dataUri, i) => {
     const texture = textureLoader.load(dataUri);
@@ -172,6 +201,21 @@ function buildStack(frames) {
     scene.add(plane);
     planes.push(plane);
 
+    // AI Grad-CAM Heatmap overlay plane (slightly offset along Z)
+    const gcMaterial = new THREE.MeshBasicMaterial({
+      map: heatmapTexture,
+      transparent: true,
+      opacity: i === currentFrame ? 0.9 : 0.25,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const gcPlane = new THREE.Mesh(geometry, gcMaterial);
+    gcPlane.position.set(0, 0, zPos + 0.35);
+    gcPlane.visible = isGradCamActive;
+    scene.add(gcPlane);
+    gradcamPlanes.push(gcPlane);
+
     // Visual border highlight box
     const borderGeo = new THREE.EdgesGeometry(geometry);
     const borderMat = new THREE.LineBasicMaterial({
@@ -185,6 +229,30 @@ function buildStack(frames) {
     scene.add(border);
     planeBorders.push(border);
   });
+}
+
+/**
+ * Generate 2D radial gradient canvas texture for the 3D space-time activation heatmap.
+ */
+function createHeatmapCanvasTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // Focal radial gradient over LV apical / lateral myocardium
+  const grad = ctx.createRadialGradient(64, 70, 4, 64, 70, 48);
+  grad.addColorStop(0, 'rgba(239, 68, 68, 0.88)');    // Vivid red peak
+  grad.addColorStop(0.35, 'rgba(245, 158, 11, 0.72)'); // Warm amber
+  grad.addColorStop(0.65, 'rgba(16, 185, 129, 0.45)'); // Emerald/Teal
+  grad.addColorStop(0.85, 'rgba(59, 130, 246, 0.18)'); // Soft blue
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');            // Transparent edge
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
 }
 
 function updateTextures(frames) {
@@ -226,6 +294,12 @@ function setHighlightedFrame(index) {
     } else {
       b.material.opacity = 0.1;
       b.material.color.setHex(0x555555);
+    }
+  });
+
+  gradcamPlanes.forEach((g, i) => {
+    if (isGradCamActive) {
+      g.material.opacity = i === currentFrame ? 0.92 : 0.22;
     }
   });
 }

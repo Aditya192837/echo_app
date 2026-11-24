@@ -2,9 +2,9 @@
  * main.js - Core application router and state manager.
  * Provides hash routing across #analyze, #viewer, #model, #about.
  */
-import { initAnalyze } from './analyze.js';
-import { initViewer, onViewerSectionActivated } from './viewer3d.js';
-import { initModel, onModelSectionActivated } from './model.js';
+import { initAnalyze } from './analyze.js?v=2.2';
+import { initViewer, onViewerSectionActivated } from './viewer3d.js?v=2.2';
+import { initModel, onModelSectionActivated } from './model.js?v=2.2';
 
 // Global application state shared across modules
 export const state = {

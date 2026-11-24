@@ -1,7 +1,9 @@
 /**
  * model.js - Model evaluation metrics, inline SVG charts (50 epochs), overfitting note, and table.
+ * Complemented with Barrios et al. (Nature Cardiovascular Research 2026) Multiview Benchmark Hub.
  */
-import { fetchWithTimeout } from './main.js';
+import { fetchWithTimeout } from './main.js?v=2.2';
+import { PAPER_TASKS, EXTERNAL_VALIDATION_MHI } from './benchmarks.js?v=2.2';
 
 let metricsData = null;
 let isLoaded = false;
@@ -14,6 +16,9 @@ export function initModel() {
       if (wrapper) wrapper.classList.add('hidden');
     });
   }
+
+  initBenchmarkHub();
+  renderMultiCenterGrid();
 }
 
 export async function onModelSectionActivated() {
@@ -181,4 +186,169 @@ function renderSvgChart(containerId, history, trainKey, valKey, metricName, best
   `;
 
   container.innerHTML = svgHtml;
+}
+
+/**
+ * Benchmark Hub: Initializes task tabs and renders dynamic comparative analytics.
+ */
+function initBenchmarkHub() {
+  const tabsContainer = document.getElementById('task-tabs-container');
+  if (!tabsContainer) return;
+
+  const tabButtons = tabsContainer.querySelectorAll('.tab-btn');
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const taskId = btn.getAttribute('data-task');
+      renderBenchmarkTask(taskId);
+    });
+  });
+
+  // Default initial render
+  renderBenchmarkTask('lvrv');
+}
+
+function renderBenchmarkTask(taskId) {
+  const task = PAPER_TASKS[taskId];
+  if (!task) return;
+
+  const chartTitle = document.getElementById('benchmark-chart-title');
+  if (chartTitle) chartTitle.textContent = `AUC Comparison: ${task.name}`;
+
+  const tableTitle = document.getElementById('benchmark-table-title');
+  if (tableTitle) tableTitle.textContent = `Full Diagnostic Metrics: ${task.name}`;
+
+  const callout = document.getElementById('benchmark-gain-callout');
+  if (callout) {
+    callout.innerHTML = `<strong>Architecture Advantage:</strong> Multiview mid-fusion ${task.multiviewGain} &bull; <em>${task.description}</em>`;
+  }
+
+  renderBenchmarkBarChart(task);
+  renderBenchmarkTable(task);
+}
+
+/**
+ * Render responsive horizontal SVG bar chart comparing AUC across models.
+ */
+function renderBenchmarkBarChart(task) {
+  const container = document.getElementById('benchmark-bar-chart');
+  if (!container) return;
+
+  const models = task.models || [];
+  const w = 540;
+  const barHeight = 22;
+  const rowGap = 16;
+  const topPad = 25;
+  const bottomPad = 35;
+  const leftPad = 175;
+  const rightPad = 75;
+  const plotW = w - leftPad - rightPad;
+  const h = topPad + models.length * (barHeight + rowGap) + bottomPad;
+
+  const minAuc = 0.60;
+  const maxAuc = 1.00;
+  const getX = (val) => leftPad + Math.max(0, (val - minAuc) / (maxAuc - minAuc)) * plotW;
+
+  const gridTicks = [0.60, 0.70, 0.80, 0.90, 1.00];
+
+  let svgHtml = `
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Horizontal bar chart comparing AUC across model architectures">
+      <!-- Grid lines -->
+      ${gridTicks
+        .map(
+          (tick) => `
+        <line x1="${getX(tick).toFixed(1)}" y1="${topPad}" x2="${getX(tick).toFixed(1)}" y2="${h - bottomPad}" stroke="var(--border-color, #e2e8f0)" stroke-width="1" stroke-dasharray="3,3" />
+        <text x="${getX(tick).toFixed(1)}" y="${h - bottomPad + 16}" text-anchor="middle" font-size="10" fill="var(--text-muted, #64748b)">${tick.toFixed(2)}</text>
+      `
+        )
+        .join('')}
+
+      <!-- Bottom Axis Line -->
+      <line x1="${leftPad}" y1="${h - bottomPad}" x2="${w - rightPad}" y2="${h - bottomPad}" stroke="var(--border-color, #cbd5e1)" stroke-width="1" />
+      <text x="${leftPad + plotW / 2}" y="${h - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--text-subtle, #475569)">Area Under ROC Curve (AUC)</text>
+
+      <!-- Bars -->
+      ${models
+        .map((m, idx) => {
+          const y = topPad + idx * (barHeight + rowGap);
+          const barW = Math.max(4, getX(m.auc) - leftPad);
+
+          let barColor = '#64748b'; // single-view slate
+          if (m.type === 'multiview') barColor = 'var(--accent-primary, #0284c7)';
+          else if (m.type === 'fusion') barColor = '#0d9488'; // teal
+
+          const isHighlighted = !!m.highlight;
+
+          return `
+            <g class="bar-group">
+              <!-- Model Name Label -->
+              <text x="${leftPad - 10}" y="${y + 15}" text-anchor="end" font-size="11" font-weight="${isHighlighted ? '700' : '500'}" fill="${isHighlighted ? 'var(--accent-primary, #0284c7)' : 'var(--text-main, #0f172a)'}">
+                ${m.name}
+              </text>
+
+              <!-- Bar Rect -->
+              <rect x="${leftPad}" y="${y}" width="${barW.toFixed(1)}" height="${barHeight}" rx="4" ry="4" fill="${barColor}" fill-opacity="${isHighlighted ? '1.0' : '0.85'}" ${isHighlighted ? 'stroke="#38bdf8" stroke-width="1.5"' : ''} />
+
+              <!-- Value Text -->
+              <text x="${(leftPad + barW + 8).toFixed(1)}" y="${y + 15}" font-size="11" font-weight="700" fill="var(--text-main, #0f172a)">
+                ${m.auc.toFixed(3)}
+              </text>
+            </g>
+          `;
+        })
+        .join('')}
+    </svg>
+  `;
+
+  container.innerHTML = svgHtml;
+}
+
+function renderBenchmarkTable(task) {
+  const tbody = document.getElementById('benchmark-table-body');
+  if (!tbody) return;
+
+  const models = task.models || [];
+  tbody.innerHTML = models
+    .map(
+      (m) => `
+    <tr class="${m.highlight ? 'row-highlight' : ''}">
+      <td>
+        <strong>${m.name}</strong>
+        ${m.highlight ? '<span class="badge-accent" style="margin-left: 6px; font-size: 0.65rem; padding: 2px 6px;">Multiview</span>' : ''}
+      </td>
+      <td><strong>${m.auc.toFixed(3)}</strong> <span style="font-size: 0.72rem; color: var(--text-muted);">(${m.ci})</span></td>
+      <td>${(m.sens * 100).toFixed(1)}%</td>
+      <td>${(m.spec * 100).toFixed(1)}%</td>
+      <td>${(m.ppv * 100).toFixed(1)}%</td>
+      <td>${(m.npv * 100).toFixed(1)}%</td>
+      <td>${m.f1.toFixed(3)}</td>
+    </tr>
+  `
+    )
+    .join('');
+}
+
+function renderMultiCenterGrid() {
+  const grid = document.getElementById('multicenter-grid');
+  if (!grid || !EXTERNAL_VALIDATION_MHI) return;
+
+  grid.innerHTML = EXTERNAL_VALIDATION_MHI.tasks
+    .map(
+      (t) => `
+    <div class="mhi-card">
+      <div class="mhi-title">${t.task}</div>
+      <div class="mhi-stats">External Cohort: Montreal Heart Institute (N = ${t.n.toLocaleString()})</div>
+      <div class="mhi-auc-comparison">
+        <span>MHI External AUC: <strong style="color: var(--accent-primary);">${t.multiviewAuc}</strong></span>
+        <span>UCSF Internal: <strong>${t.ucsfAuc}</strong></span>
+      </div>
+      <div style="font-size: 0.75rem; margin-bottom: 0.5rem; color: var(--text-subtle);">
+        Sens: <strong>${t.sens}</strong> &bull; Spec: <strong>${t.spec}</strong> &bull; PPV: <strong>${t.ppv}</strong> &bull; NPV: <strong>${t.npv}</strong> &bull; F1: <strong>${t.f1}</strong>
+      </div>
+      <div class="mhi-tag">&check; ${t.status}</div>
+    </div>
+  `
+    )
+    .join('');
 }

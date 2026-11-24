@@ -1050,3 +1050,633 @@ input:focus-visible,
     height: 380px;
   }
 }
+
+/* ==========================================================================
+   Extended Clinical, Kinematic & Benchmark Styles (Barrios et al., 2026)
+   ========================================================================== */
+
+/* Subcard components */
+.subcard {
+  margin-top: 1.25rem;
+  background: linear-gradient(180deg, rgba(21, 30, 50, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.subcard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.subcard-header h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.subcard-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background-color: var(--accent-light);
+  color: var(--accent-primary);
+}
+
+.subcard-desc {
+  font-size: 0.8rem;
+  color: var(--text-subtle);
+  margin-bottom: 0.85rem;
+  line-height: 1.45;
+}
+
+/* Clinical Triage Status */
+.triage-status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.triage-label {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.triage-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.triage-low {
+  background-color: var(--status-normal-bg);
+  color: var(--status-normal-text);
+  border: 1px solid var(--status-normal-border);
+}
+
+.triage-borderline {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.triage-high {
+  background-color: var(--status-abnormal-bg);
+  color: var(--status-abnormal-text);
+  border: 1px solid var(--status-abnormal-border);
+}
+
+/* Operating Point Controls */
+.preset-btn-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.preset-btn {
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem !important;
+  border-radius: 6px;
+  background-color: rgba(30, 41, 59, 0.85);
+  color: #94a3b8;
+  border: 1px solid #334155;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.preset-btn:hover {
+  background-color: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.preset-btn.active {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  color: #ffffff !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+  transform: translateY(-1px);
+}
+
+.threshold-slider-wrapper {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  padding: 0.95rem 1.15rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.85rem;
+}
+
+.threshold-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+  color: var(--text-main);
+}
+
+.threshold-slider-header strong {
+  color: #38bdf8;
+  font-size: 1rem;
+  font-family: var(--font-mono, monospace);
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.threshold-range-slider {
+  width: 100%;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}
+
+.threshold-slider-hints {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  margin-top: 0.25rem;
+}
+
+/* Dynamic Trade-off Metrics Display */
+.operating-metrics-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.op-stat-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.op-stat-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  transform: translateY(-1px);
+}
+
+.op-stat-lbl {
+  font-size: 0.68rem;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.2rem;
+}
+
+.op-stat-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-family: var(--font-mono, monospace);
+  color: #38bdf8;
+}
+
+.op-stat-val.text-accent {
+  color: #38bdf8;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.op-stat-val.text-success {
+  color: #34d399;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
+}
+
+.op-stat-hint {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.operating-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background-color: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+.summary-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-lbl {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+}
+
+.summary-val {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.summary-val.text-normal {
+  color: var(--status-normal-text);
+}
+
+.summary-val.text-abnormal {
+  color: var(--status-abnormal-text);
+}
+
+/* Kinematics Section */
+.kinematics-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kinematics-item {
+  background-color: var(--bg-subtle);
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.k-label {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.k-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  line-height: 1.25;
+}
+
+.k-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* Motion Sparkline */
+.motion-sparkline-box {
+  background-color: var(--bg-subtle);
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+.sparkline-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.sparkline-title {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.sparkline-legend {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 2px;
+}
+
+.legend-dot.es {
+  background-color: #ef4444;
+}
+
+.legend-dot.ed {
+  background-color: #3b82f6;
+}
+
+.motion-sparkline-container {
+  width: 100%;
+  height: 60px;
+}
+
+.motion-sparkline-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Grad-CAM Heatmap Overlay Controls */
+.filmstrip-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.gradcam-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--accent-light);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.gradcam-slider {
+  width: 110px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
+
+.gradcam-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.filmstrip-item-wrapper {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background-color: #000;
+}
+
+.gradcam-canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.65;
+  mix-blend-mode: screen;
+}
+
+.report-export-bar {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Benchmark Hub Section */
+.benchmark-card {
+  margin-bottom: 2rem;
+}
+
+.benchmark-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.badge-accent {
+  background-color: var(--accent-light);
+  color: var(--accent-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.task-tabs-container {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.45rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease-in-out;
+}
+
+.tab-btn:hover {
+  background-color: var(--bg-subtle);
+  color: var(--accent-primary);
+}
+
+.tab-btn.active {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+.benchmark-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .benchmark-content-grid {
+    grid-template-columns: 1.15fr 1fr;
+  }
+}
+
+.benchmark-chart-box,
+.benchmark-table-box {
+  background-color: var(--bg-subtle);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.benchmark-chart-box h4,
+.benchmark-table-box h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--text-main);
+}
+
+.benchmark-bar-chart {
+  width: 100%;
+  height: 240px;
+}
+
+.benchmark-bar-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.benchmark-gain-callout {
+  margin-top: 0.85rem;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--accent-light);
+  color: var(--accent-primary);
+  border-radius: var(--radius-sm);
+}
+
+.benchmark-table {
+  font-size: 0.78rem !important;
+}
+
+.benchmark-table th,
+.benchmark-table td {
+  padding: 0.5rem 0.6rem !important;
+}
+
+.row-highlight {
+  background-color: var(--accent-light);
+  font-weight: 700;
+}
+
+/* Multicenter external validation grid */
+.multicenter-card {
+  margin-bottom: 2rem;
+}
+
+.multicenter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.mhi-card {
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  border-left: 4px solid var(--accent-primary);
+}
+
+.mhi-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-main);
+}
+
+.mhi-stats {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.mhi-auc-comparison {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--bg-surface);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.mhi-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #047857;
+  font-weight: 600;
+}
+
+/* Subgroup fairness */
+.fairness-card {
+  margin-bottom: 2rem;
+}
+
+.fairness-tables-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 850px) {
+  .fairness-tables-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fairness-subbox {
+  background-color: var(--bg-subtle);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+}
+
+.fairness-subbox h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}
+
+.compact-table {
+  font-size: 0.75rem !important;
+}
+
+.compact-table th,
+.compact-table td {
+  padding: 0.4rem 0.5rem !important;
+}
+
+/* Printable Clinical Case Report */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .app-header,
+  .top-nav,
+  .upload-card,
+  .action-bar,
+  .report-export-bar,
+  .view-3d-link,
+  .preset-btn-group,
+  .threshold-slider-wrapper {
+    display: none !important;
+  }
+  .main-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
