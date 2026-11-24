@@ -78,44 +78,6 @@ echo_app/
 
 ---
 
-## 🚀 Running the Project
-
-### Prerequisites
-- Python 3.10+
-- Modern Web Browser (Chrome, Edge, Firefox, Brave)
-
-### One-Click Startup (Windows)
-Double-click `run.bat` or execute in PowerShell:
-```powershell
-.\run.bat
-```
-
-### Manual Command Line Startup
-```powershell
-# Activate virtual environment
-.\.venv\Scripts\activate.bat
-
-# Launch FastAPI uvicorn server
-uvicorn backend.app:app --host 127.0.0.1 --port 8000
-```
-Open your web browser at **`http://127.0.0.1:8000`**.
-
----
-
-## 🧪 Automated Self-Check
-To verify end-to-end forward-pass execution, synthetic video inference, metrics parsing, and error handling:
-```powershell
-.\.venv\Scripts\python.exe backend\selfcheck.py
-```
-Expected output:
-```
-[1] Forward pass test... PASS
-[2] Synthetic video prediction test... PASS
-[3] Metrics endpoint test... PASS
-[4] Error paths test... PASS
-========================================
-OVERALL RESULT: ALL CHECKS PASSED
-```
 
 ---
 
